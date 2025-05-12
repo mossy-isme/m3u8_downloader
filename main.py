@@ -1,10 +1,16 @@
 from flask import Flask, request, send_file
+from flask_cors import CORS
 import subprocess
 import os
 import tempfile
 import zipfile
 
 app = Flask(__name__)
+CORS(app)
+
+@app.route('/')
+def home():
+    return "🎉 M3U8 Downloader is running! POST to /download to use it."
 
 @app.route('/download', methods=['POST'])
 def download_m3u8():
