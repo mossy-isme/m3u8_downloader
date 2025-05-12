@@ -6,7 +6,7 @@ import zipfile
 
 app = Flask(__name__)
 
-@app.route('/', methods=['POST'])
+@app.route('/download', methods=['POST'])
 def download_m3u8():
     links = request.json.get('links', [])
     if not links:
