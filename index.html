@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Video Downloader</title>
+</head>
+<body>
+  <h1>Enter .m3u8 links (one per line)</h1>
+  <textarea id="links" rows="10" cols="50"></textarea><br><br>
+  <button onclick="submitLinks()">Download</button>
+
+  <script>
+    async function submitLinks() {
+      const raw = document.getElementById('links').value;
+      const links = raw.split('\n').filter(line => line.trim() !== '');
+
+      const response = await fetch('https://YOUR-BACKEND-HOST/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ links })
+      });
+
+      if (!response.ok) {
+        alert("Error downloading videos.");
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'videos.zip';
+      a.click();
+    }
+  </script>
+</body>
+</html>
