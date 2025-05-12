@@ -1,35 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Video Downloader</title>
+  <title>M3U8 Downloader</title>
+  <style>
+    #loading {
+      display: none;
+      font-weight: bold;
+      color: blue;
+    }
+  </style>
 </head>
 <body>
   <h1>Enter .m3u8 links (one per line)</h1>
   <textarea id="links" rows="10" cols="50"></textarea><br><br>
-  <button onclick="submitLinks()">Download</button>
+  <button onclick="submitLinks()">Download Videos</button>
+  <p id="loading">⏳ Downloading... Please wait, this may take a minute.</p>
 
   <script>
     async function submitLinks() {
       const raw = document.getElementById('links').value;
-      const links = raw.split('\n').filter(line => line.trim() !== '');
+      const links = raw.split('\n').map(line => line.trim()).filter(Boolean);
+      const loading = document.getElementById('loading');
 
-      const response = await fetch('https://m3u8downloader-production.up.railway.app/download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ links })
-      });
-
-      if (!response.ok) {
-        alert("Error downloading videos.");
+      if (links.length === 0) {
+        alert("Please enter at least one link.");
         return;
       }
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'videos.zip';
-      a.click();
+      loading.style.display = 'block';
+
+      try {
+        const response = await fetch("https://your-app-name.up.railway.app/download", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ links })
+        });
+
+        if (!response.ok) {
+          alert("Error downloading videos.");
+          return;
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "videos.zip";
+        a.click();
+      } catch (error) {
+        alert("Something went wrong: " + error);
+      } finally {
+        loading.style.display = 'none';
+      }
     }
   </script>
 </body>
