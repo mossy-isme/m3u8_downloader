@@ -23,8 +23,10 @@ def download_m3u8():
 
     for i, link in enumerate(links):
         output_path = os.path.join(temp_dir, f'video_{i+1}.mp4')
+        print(f"Downloading: {link}")
         command = ['ffmpeg', '-i', link, '-c', 'copy', output_path]
         subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print(f"Saved: {output_path}")
         output_files.append(output_path)
 
     zip_path = os.path.join(temp_dir, 'videos.zip')
@@ -36,4 +38,4 @@ def download_m3u8():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))  # use 8080 from Railway
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, threaded=True)
