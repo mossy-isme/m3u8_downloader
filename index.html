@@ -3,10 +3,22 @@
 <head>
   <title>M3U8 Downloader</title>
   <style>
-    #loading {
+    #progress-container {
       display: none;
-      font-weight: bold;
-      color: blue;
+      margin-top: 20px;
+    }
+
+    #progress-bar {
+      width: 0%;
+      height: 24px;
+      background-color: #3498db;
+      text-align: center;
+      color: white;
+    }
+
+    #progress-box {
+      width: 100%;
+      background-color: #f3f3f3;
     }
   </style>
 </head>
@@ -14,44 +26,64 @@
   <h1>Enter .m3u8 links (one per line)</h1>
   <textarea id="links" rows="10" cols="50"></textarea><br><br>
   <button onclick="submitLinks()">Download Videos</button>
-  <p id="loading">⏳ Downloading... Please wait, this may take a minute.</p>
+
+  <div id="progress-container">
+    <div id="progress-box">
+      <div id="progress-bar">0%</div>
+    </div>
+    <p id="progress-text">Starting download...</p>
+  </div>
 
   <script>
     async function submitLinks() {
       const raw = document.getElementById('links').value;
       const links = raw.split('\n').map(line => line.trim()).filter(Boolean);
-      const loading = document.getElementById('loading');
-
       if (links.length === 0) {
         alert("Please enter at least one link.");
         return;
       }
 
-      loading.style.display = 'block';
+      document.getElementById('progress-container').style.display = 'block';
 
-      try {
-        const response = await fetch("https://m3u8downloader-production.up.railway.app/download", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ links })
-        });
+      const startResponse = await fetch("https://m3u8downloader-production.up.railway.app/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ links })
+      });
 
-        if (!response.ok) {
-          alert("Error downloading videos.");
+      const { job_id } = await startResponse.json();
+      pollStatus(job_id);
+    }
+
+    async function pollStatus(job_id) {
+      const statusUrl = `https://m3u8downloader-production.up.railway.app/status/${job_id}`;
+      const downloadUrl = `https://m3u8downloader-production.up.railway.app/download/${job_id}`;
+
+      const interval = setInterval(async () => {
+        const res = await fetch(statusUrl);
+        const data = await res.json();
+
+        if (data.error) {
+          clearInterval(interval);
+          alert("Error: " + data.error);
           return;
         }
 
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "videos.zip";
-        a.click();
-      } catch (error) {
-        alert("Something went wrong: " + error);
-      } finally {
-        loading.style.display = 'none';
-      }
+        const percent = Math.floor((data.progress / data.total) * 100);
+        document.getElementById("progress-bar").style.width = percent + "%";
+        document.getElementById("progress-bar").textContent = percent + "%";
+        document.getElementById("progress-text").textContent = `Downloaded ${data.progress} of ${data.total} videos`;
+
+        if (data.status === "complete") {
+          clearInterval(interval);
+          const blob = await fetch(downloadUrl).then(r => r.blob());
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "videos.zip";
+          a.click();
+        }
+      }, 2000);
     }
   </script>
 </body>
